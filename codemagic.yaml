@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿workflows:
+=======
+workflows:
+>>>>>>> 48b77dc0b1c53b2938b94a43eae52877a57583ee
   capacitor_ios_online_unsigned:
     name: Capacitor iOS (online, unsigned for Sideloadly)
     instance_type: mac_mini_m1
