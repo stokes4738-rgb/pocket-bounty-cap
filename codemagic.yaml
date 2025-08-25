@@ -10,6 +10,8 @@ workflows:
       vars:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
+        DERIVED_DATA: $CM_BUILD_DIR/xcodebuild
+        APP_OUT: $CM_BUILD_DIR/PocketBounty-unsigned.ipa
 
     scripts:
       - name: Install Node deps
@@ -18,23 +20,36 @@ workflows:
       - name: Sync Capacitor (installs Pods)
         script: npx cap sync ios
 
-      - name: Build .app without signing
+      - name: Build .app without signing (to a fixed folder)
         script: |
           set -e
+
+          # Clean & build to a known DerivedData path
           xcodebuild \
             -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath "$DERIVED_DATA" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            build
+            clean build
 
-          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -type d -name 'Build' -maxdepth 3 | head -n1)/Products/Release-iphoneos/App.app
+          # App should now be here:
+          APP_PATH="$DERIVED_DATA/Build/Products/Release-iphoneos/App.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "❌ App.app not found at $APP_PATH"
+            echo "Available products:"
+            ls -R "$DERIVED_DATA/Build/Products" || true
+            exit 1
+          fi
 
-          mkdir -p Payload
+          # Package into an unsigned IPA
+          rm -rf Payload
+          mkdir Payload
           cp -R "$APP_PATH" Payload/
-
-          /usr/bin/zip -qry PocketBounty-unsigned.ipa Payload
+          /usr/bin/zip -qry "$APP_OUT" Payload
+          echo "✅ Unsigned IPA at: $APP_OUT"
 
     artifacts:
-      - PocketBounty-unsigned.ipa
+      - $CM_BUILD_DIR/PocketBounty-unsigned.ipa
+      - $CM_BUILD_DIR/xcodebuild/Build/Products/Release-iphoneos/**/*
