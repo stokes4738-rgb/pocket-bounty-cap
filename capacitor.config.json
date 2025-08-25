@@ -1,0 +1,9 @@
+﻿{
+  "appId": "com.pocketbounty.app",
+  "appName": "Pocket Bounty",
+  "webDir": "www",
+  "server": {
+    "url": "https://pocketbounty.life",
+    "cleartext": false
+  }
+}
